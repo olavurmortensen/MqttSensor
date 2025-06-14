@@ -1,16 +1,15 @@
+// Wi-Fi credentials (SSID and password) must be stored in a file that is not tracked
+// by version control.
+#include "wifi_credentials.h"
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 #include <DHT_U.h>
 #include <ESP8266WiFi.h>
 #include <Ticker.h>
 #include <AsyncMqttClient.h>
-//#include <Arduino.h>
 
 #define DHTPIN 2
 #define LED D0
-
-#define WIFI_SSID "Heilo"
-#define WIFI_PASSWORD "potato12"
 
 #define MQTT_HOST IPAddress(192, 168, 11, 10)
 
