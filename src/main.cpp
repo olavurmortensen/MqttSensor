@@ -1,77 +1,67 @@
-#include <ESP8266WiFi.h>
-#include <Ticker.h>
-#include <AsyncMqttClient.h>
-#include <Arduino.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
+//#include <ESP8266WiFi.h>
+//#include <Ticker.h>
+//#include <AsyncMqttClient.h>
+//#include <Arduino.h>
 
-#define LED 2
-#define DH_PIN 16 // D0
+// NOTE: This library does not seem to work with using D4 (GPIO16) as the data wire. It does
+// however work with D4 (GPIO2). Which incidentally is the ESP8266's built-in LED pin.
+//#define LED 2
+#define DHTPIN 2
 
-int data[5];
-
-byte read_data() {
-  byte i = 0;
-  byte result = 0;
-  for (i = 0; i < 8; i++) {
-      while (digitalRead(DH_PIN) == LOW); // wait 50us
-      delayMicroseconds(30); //The duration of the high level is judged to determine whether the data is '0' or '1'
-      if (digitalRead(DH_PIN) == HIGH)
-        result |= (1 << (8 - i)); //High in the former, low in the post
-    while (digitalRead(DH_PIN) == HIGH); //Data '1', waiting for the next bit of reception
-    }
-  return result;
-}
-
-void start_test() {
-  digitalWrite(DH_PIN, LOW); //Pull down the bus to send the start signal
-  delay(30); //The delay is greater than 18 ms so that DHT 11 can detect the start signal
-  digitalWrite(DH_PIN, HIGH);
-  delayMicroseconds(40); //Wait for DHT11 to respond
-  pinMode(DH_PIN, INPUT);
-  while(digitalRead(DH_PIN) == HIGH);
-  delayMicroseconds(80); //The DHT11 responds by pulling the bus low for 80us;
-  
-  if(digitalRead(DH_PIN) == LOW)
-    delayMicroseconds(80); //DHT11 pulled up after the bus 80us to start sending data;
-  for(int i = 0; i < 5; i++) //Receiving temperature and humidity data, check bits are not considered;
-    data[i] = read_data();
-  pinMode(DH_PIN, OUTPUT);
-  digitalWrite(DH_PIN, HIGH); //After the completion of a release of data bus, waiting for the host to start the next signal
-}
-
+// The sensor is initialized
+#define DHTTYPE DHT11   // DHT 11
+DHT dht(DHTPIN, DHTTYPE);
+ 
 void setup() {
-  Serial.begin(115200);
-  Serial.println();
+  Serial.begin(9600);
 
-  pinMode(LED, OUTPUT);
-  pinMode(DH_PIN, OUTPUT);
+  //pinMode(LED, OUTPUT);
+
+  Serial.println("KY-015 Test - Temperature and humidity test:");
+  // Measurement is started
+  dht.begin();
 }
+ 
+// Main program loop
+// The program starts the measurement and reads out the measured values
+// A pause of 2 seconds is inserted between the measurements,
+// so that a new measurement can be recorded during the next run.
 
 bool ledState = false;
 void loop() {
-  digitalWrite(LED, ledState ? HIGH : LOW);
-  ledState = !ledState;
-  Serial.println();
-  Serial.printf("LED: %d\n",ledState);
-  start_test();
-  Serial.print("Humdity = ");
-  Serial.print(data[0], DEC); //Displays the integer bits of humidity;
-  Serial.print('.');
-  Serial.print(data[1], DEC); //Displays the decimal places of the humidity;
-  Serial.println('%');
-  Serial.print("Temperature = ");
-  Serial.print(data[2], DEC); //Displays the integer bits of temperature;
-  Serial.print('.');
-  Serial.print(data[3], DEC); //Displays the decimal places of the temperature;
-  Serial.println('C');
+  // Two seconds pause between measurements
+  delay(2000);
 
-  byte checksum = data[0] + data[1] + data[2] + data[3];
-  if (data[4] != checksum) 
-    Serial.println("-- Checksum Error!");
-  else
-    Serial.println("-- OK");
- 
-  delay(1000);
+  //digitalWrite(LED, ledState ? HIGH : LOW);
+  //ledState = !ledState;
+  //Serial.println();
+  //Serial.printf("LED: %d\n",ledState);
+
+  // Humidity is measured
+  float h = dht.readHumidity();
+  // Temperature is measured
+  float t = dht.readTemperature();
+  // Checks whether the measurements have run through without errors
+  // If an error is detected, an error message is output here
+  if (isnan(h) || isnan(t)) {
+    Serial.println("Error when reading out the sensor");
+    return;
+  }
+  // Output to the serial console
+  Serial.println("-----------------------------------------------------------");
+  Serial.print(" Humidity: ");
+  Serial.print(h);
+  Serial.print(" %\t");
+  Serial.print(" Temperature: ");
+  Serial.print(t);
+  Serial.println(" °C ");
+  Serial.println("-----------------------------------------------------------");
+  Serial.println(" ");
 }
+
 /*
 #define WIFI_SSID "Heilo"
 #define WIFI_PASSWORD "potato12"
