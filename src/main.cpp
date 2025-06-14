@@ -1,68 +1,14 @@
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 #include <DHT_U.h>
-//#include <ESP8266WiFi.h>
-//#include <Ticker.h>
-//#include <AsyncMqttClient.h>
+#include <ESP8266WiFi.h>
+#include <Ticker.h>
+#include <AsyncMqttClient.h>
 //#include <Arduino.h>
 
-// NOTE: This library does not seem to work with using D4 (GPIO16) as the data wire. It does
-// however work with D4 (GPIO2). Which incidentally is the ESP8266's built-in LED pin.
-//#define LED 2
 #define DHTPIN 2
+#define LED D0
 
-// The sensor is initialized
-#define DHTTYPE DHT11   // DHT 11
-DHT dht(DHTPIN, DHTTYPE);
- 
-void setup() {
-  Serial.begin(9600);
-
-  //pinMode(LED, OUTPUT);
-
-  Serial.println("KY-015 Test - Temperature and humidity test:");
-  // Measurement is started
-  dht.begin();
-}
- 
-// Main program loop
-// The program starts the measurement and reads out the measured values
-// A pause of 2 seconds is inserted between the measurements,
-// so that a new measurement can be recorded during the next run.
-
-bool ledState = false;
-void loop() {
-  // Two seconds pause between measurements
-  delay(2000);
-
-  //digitalWrite(LED, ledState ? HIGH : LOW);
-  //ledState = !ledState;
-  //Serial.println();
-  //Serial.printf("LED: %d\n",ledState);
-
-  // Humidity is measured
-  float h = dht.readHumidity();
-  // Temperature is measured
-  float t = dht.readTemperature();
-  // Checks whether the measurements have run through without errors
-  // If an error is detected, an error message is output here
-  if (isnan(h) || isnan(t)) {
-    Serial.println("Error when reading out the sensor");
-    return;
-  }
-  // Output to the serial console
-  Serial.println("-----------------------------------------------------------");
-  Serial.print(" Humidity: ");
-  Serial.print(h);
-  Serial.print(" %\t");
-  Serial.print(" Temperature: ");
-  Serial.print(t);
-  Serial.println(" °C ");
-  Serial.println("-----------------------------------------------------------");
-  Serial.println(" ");
-}
-
-/*
 #define WIFI_SSID "Heilo"
 #define WIFI_PASSWORD "potato12"
 
@@ -72,6 +18,10 @@ void loop() {
 
 #define MQTT_PUB_COUNT "esp/test/count"
 
+// The sensor is initialized
+#define DHTTYPE DHT11   // DHT 11
+DHT dht(DHTPIN, DHTTYPE);
+ 
 AsyncMqttClient mqttClient;
 Ticker mqttReconnectTimer;
 WiFiEventHandler wifiConnectHandler;
@@ -79,7 +29,7 @@ WiFiEventHandler wifiDisconnectHandler;
 Ticker wifiReconnectTimer;
 
 unsigned long previousMillis = 0;
-const long interval = 10000;
+const long interval = 1000;
 unsigned long count = 0;
 
 void connectToWifi() {
@@ -123,7 +73,11 @@ void onMqttPublish(uint16_t packetId) {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
+
+  Serial.println("KY-015 Test - Temperature and humidity test:");
+  // Measurement is started
+  dht.begin();
   Serial.println();
 
   pinMode(LED, OUTPUT);
@@ -138,12 +92,35 @@ void setup() {
   connectToWifi();
 }
 
+bool ledState = false;
 void loop() {
   unsigned long currentMillis = millis();
-  bool ledState = false;
   if (currentMillis - previousMillis >= interval) {
     digitalWrite(LED, ledState ? HIGH : LOW);
     ledState = !ledState;
+
+    // Humidity is measured
+    float h = dht.readHumidity();
+    // Temperature is measured
+    float t = dht.readTemperature();
+    // Checks whether the measurements have run through without errors
+    // If an error is detected, an error message is output here
+    if (isnan(h) || isnan(t)) {
+      Serial.println("Error when reading out the sensor");
+      return;
+    }
+
+    // Output to the serial console
+    Serial.println("-----------------------------------------------------------");
+    Serial.print(" Humidity: ");
+    Serial.print(h);
+    Serial.print(" %\t");
+    Serial.print(" Temperature: ");
+    Serial.print(t);
+    Serial.println(" °C ");
+    Serial.println("-----------------------------------------------------------");
+    Serial.println(" ");
+
     previousMillis = currentMillis;
     Serial.println();
     uint16_t packetIdPub = mqttClient.publish(MQTT_PUB_COUNT, 1, true, String(count).c_str());
@@ -152,5 +129,3 @@ void loop() {
     count = count + 1;
   }
 }
-
-*/
