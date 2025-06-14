@@ -15,7 +15,8 @@
 
 #define MQTT_PORT 1883
 
-#define MQTT_PUB_COUNT "esp/test/count"
+#define MQTT_PUB_TEMP "esp/test/temperature"
+#define MQTT_PUB_HUM "esp/test/humidity"
 
 // The sensor is initialized
 #define DHTTYPE DHT11   // DHT 11
@@ -28,7 +29,7 @@ WiFiEventHandler wifiDisconnectHandler;
 Ticker wifiReconnectTimer;
 
 unsigned long previousMillis = 0;
-const long interval = 1000;
+const long interval = 10000;
 unsigned long count = 0;
 
 void connectToWifi() {
@@ -99,12 +100,12 @@ void loop() {
     ledState = !ledState;
 
     // Humidity is measured
-    float h = dht.readHumidity();
+    float humidity = dht.readHumidity();
     // Temperature is measured
-    float t = dht.readTemperature();
+    float temperature = dht.readTemperature();
     // Checks whether the measurements have run through without errors
     // If an error is detected, an error message is output here
-    if (isnan(h) || isnan(t)) {
+    if (isnan(humidity) || isnan(temperature)) {
       Serial.println("Error when reading out the sensor");
       return;
     }
@@ -112,19 +113,23 @@ void loop() {
     // Output to the serial console
     Serial.println("-----------------------------------------------------------");
     Serial.print(" Humidity: ");
-    Serial.print(h);
+    Serial.print(humidity);
     Serial.print(" %\t");
     Serial.print(" Temperature: ");
-    Serial.print(t);
+    Serial.print(temperature);
     Serial.println(" °C ");
     Serial.println("-----------------------------------------------------------");
     Serial.println(" ");
 
     previousMillis = currentMillis;
     Serial.println();
-    uint16_t packetIdPub = mqttClient.publish(MQTT_PUB_COUNT, 1, true, String(count).c_str());
-    Serial.printf("Publishing on topic %s at QoS 1, packetId: %i\n", MQTT_PUB_COUNT, packetIdPub);
-    Serial.printf("Message: %ld\n", count);
-    count = count + 1;
+    uint16_t packetIdPub1 = mqttClient.publish(MQTT_PUB_TEMP, 1, true, String(temperature).c_str());
+    Serial.printf("Publishing on topic %s at QoS 1, packetId: %i\n", MQTT_PUB_TEMP, packetIdPub1);
+    Serial.printf("Message: %f\n",temperature);
+
+    Serial.println();
+    uint16_t packetIdPub2 = mqttClient.publish(MQTT_PUB_HUM, 1, true, String(humidity).c_str());
+    Serial.printf("Publishing on topic %s at QoS 1, packetId: %i\n", MQTT_PUB_HUM, packetIdPub2);
+    Serial.printf("Message: %f\n",humidity);
   }
 }
